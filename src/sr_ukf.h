@@ -7,10 +7,11 @@
 
 #include <Eigen/Dense>
 #include "merwe_scaled_sigma_generator.h"
+#include "spherical_conversions.h"
 
 class sr_ukf {
     public:
-    sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs);
+    sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs, g_point reference_pose);
 
     void set_contR(Eigen::Vector<float, ROWS> new_R);
     void update(Eigen::Vector<float, ROWS> u, float dt);
@@ -32,6 +33,8 @@ class sr_ukf {
     Eigen::Matrix<float, ROWS, ROWS> m_contR;
     Eigen::Matrix<float, N, 2 * N + 1> m_sigmasf;
     merwe_scaled_sigma_generator m_pts;
+
+    c_point m_reference_pose;
 
 
     

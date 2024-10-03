@@ -1,13 +1,16 @@
 #include <Eigen/Dense>
 #include "sr_ukf.h"
+#include "spherical_conversions.h"
 
-sr_ukf::sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs) {
+sr_ukf::sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs, g_point reference_pose) {
     m_xhat = initial_state;
 
     // these are intended to be the square root of what they would usually be
     m_contQ = process_stddevs.asDiagonal();
     m_contR = measurement_stddevs.asDiagonal();
     m_S = initial_stddevs.asDiagonal();    
+
+    m_reference_pose = geodetic_to_ecef(reference_pose);
 }
 
 void sr_ukf::set_contR(Eigen::Vector<float, ROWS> new_R) {
@@ -191,10 +194,11 @@ Eigen::Matrix<float, N, N> sr_ukf::get_s() {
 }
 
 Eigen::Vector<float, ROWS> sr_ukf::h_gps(Eigen::Vector<float, N> x) {
+    c_point pose = {x(0), x(1), x(2)};
+    g_point g_pose = enu_to_geodetic(m_reference_pose, pose);
+    Eigen::Vector<float, ROWS> out = {(float) g_pose.lat, (float) g_pose.lon, (float) g_pose.height};
 
-    
-
-    return Eigen::Vector<float, ROWS>(1, 1, 1);
+    return out;
 }
 
 Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(Eigen::Vector<float, N + INPUTS> in) {
