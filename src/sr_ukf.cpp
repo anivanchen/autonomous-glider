@@ -2,7 +2,7 @@
 #include "sr_ukf.h"
 #include "spherical_conversions.h"
 
-sr_ukf::sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs, g_point reference_pose) {
+sr_ukf::sr_ukf(const Eigen::Vector<float, N>& initial_state, const Eigen::Vector<float, N>& initial_stddevs, const Eigen::Vector<float, N>& process_stddevs, const Eigen::Vector<float, ROWS>& measurement_stddevs, const g_point& reference_pose) {
     m_xhat = initial_state;
 
     // these are intended to be the square root of what they would usually be
@@ -13,11 +13,11 @@ sr_ukf::sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> in
     m_reference_pose = geodetic_to_ecef(reference_pose);
 }
 
-void sr_ukf::set_contR(Eigen::Vector<float, ROWS> new_R) {
+void sr_ukf::set_contR(const Eigen::Vector<float, ROWS>& new_R) {
     m_contR = new_R.asDiagonal();
 }
 
-void sr_ukf::predict(Eigen::Vector<float, INPUTS> u, float dt) {
+void sr_ukf::predict(const Eigen::Vector<float, INPUTS>& u, const float& dt) {
     // discretize the noise model
     Eigen::Matrix<float, N, N> cont_a;
     cont_a.setZero();
@@ -37,6 +37,7 @@ void sr_ukf::predict(Eigen::Vector<float, INPUTS> u, float dt) {
 
     // generate sigma points
     Eigen::Matrix<float, N, 2 * N + 1> sigmas = m_pts.square_root_sigma_points(m_xhat, m_S);
+    m_sigmasf.setZero();
 
     // project sigmas through process model (merwe 18)
     for (int i = 0; i < (2 * N + 1); i++) {
@@ -63,7 +64,7 @@ void sr_ukf::predict(Eigen::Vector<float, INPUTS> u, float dt) {
 
 
 
-void sr_ukf::update(Eigen::Vector<float, ROWS> y, float dt) {
+void sr_ukf::update(const Eigen::Vector<float, ROWS>& y, const float& dt) {
     // discretize the noise model
     Eigen::Matrix<float, ROWS, ROWS> disc_r = m_contR / std::sqrt(dt);
 
@@ -181,19 +182,19 @@ Eigen::Matrix<float, 2 * N, 2 * N> sr_ukf::mat_exp(const Eigen::Matrix<float, 2 
     return expA;
 }
 
-Eigen::Vector<float, N> sr_ukf::get_xhat() {
+Eigen::Vector<float, N>& sr_ukf::get_xhat() {
     return m_xhat;
 }
 
-void sr_ukf::set_xhat(Eigen::Vector<float, N> new_xhat) {
+void sr_ukf::set_xhat(const Eigen::Vector<float, N>& new_xhat) {
     m_xhat = new_xhat;
 }
 
-Eigen::Matrix<float, N, N> sr_ukf::get_s() {
+Eigen::Matrix<float, N, N>& sr_ukf::get_s() {
     return m_S;
 }
 
-Eigen::Vector<float, ROWS> sr_ukf::h_gps(Eigen::Vector<float, N> x) {
+Eigen::Vector<float, ROWS> sr_ukf::h_gps(const Eigen::Vector<float, N>& x) {
     c_point pose = {x(0), x(1), x(2)};
     g_point g_pose = enu_to_geodetic(m_reference_pose, pose);
     Eigen::Vector<float, ROWS> out = {(float) g_pose.lat, (float) g_pose.lon, (float) g_pose.height};
@@ -201,7 +202,7 @@ Eigen::Vector<float, ROWS> sr_ukf::h_gps(Eigen::Vector<float, N> x) {
     return out;
 }
 
-Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(Eigen::Vector<float, N + INPUTS> in) {
+Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(const Eigen::Vector<float, N + INPUTS>& in) {
     float xdotdot = in(9);
     float ydotdot = in(10);
     float zdotdot = in(11);
@@ -215,7 +216,7 @@ Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(Eigen::Vector<float, N + 
     return Eigen::Vector<float, N + INPUTS>{xdot, ydot, zdot, xdotdot, ydotdot, zdotdot, psidot, thetadot, phidot, 0, 0, 0, 0, 0, 0};
 }
 
-Eigen::Vector<float, N> sr_ukf::rk4(Eigen::Vector<float, N> x, Eigen::Vector<float, INPUTS> u, float dt) {
+Eigen::Vector<float, N> sr_ukf::rk4(const Eigen::Vector<float, N>& x, const Eigen::Vector<float, INPUTS>& u, const float& dt) {
     float h = dt;
     // concatenate x and u vectors so rk4 can operate on it as one vector
     Eigen::Vector<float, N + INPUTS> x_u;
@@ -235,7 +236,7 @@ Eigen::Vector<float, N> sr_ukf::rk4(Eigen::Vector<float, N> x, Eigen::Vector<flo
     return (x + ((h / 6) * (xk_1 + (2 * xk_2) + (2 * xk_3) + xk_4)));
 }
 
-Eigen::Vector<float, N> sr_ukf::state_mean(Eigen::Matrix<float, N, 2 * N + 1> sigmas, Eigen::Vector<float, 2 * N + 1> wm) {
+Eigen::Vector<float, N> sr_ukf::state_mean(const Eigen::Matrix<float, N, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
     Eigen::Vector<float, N> x;
 
     float yawsum_sin = 0;
@@ -267,7 +268,7 @@ Eigen::Vector<float, N> sr_ukf::state_mean(Eigen::Matrix<float, N, 2 * N + 1> si
     return x;
 }
 
-Eigen::Vector<float, ROWS> sr_ukf::measurement_mean(Eigen::Matrix<float, ROWS, 2 * N + 1> sigmas, Eigen::Vector<float, 2 * N + 1> wm) {
+Eigen::Vector<float, ROWS> sr_ukf::measurement_mean(const Eigen::Matrix<float, ROWS, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
     Eigen::Vector<float, ROWS> x;
     x.fill(0);
 
@@ -290,7 +291,7 @@ Eigen::Vector<float, ROWS> sr_ukf::measurement_mean(Eigen::Matrix<float, ROWS, 2
     return x;
 }
 
-Eigen::Vector<float, N> sr_ukf::state_residual(Eigen::Vector<float, N> a, Eigen::Vector<float, N> b) {
+Eigen::Vector<float, N> sr_ukf::state_residual(const Eigen::Vector<float, N> a, const Eigen::Vector<float, N>& b) {
     Eigen::Vector<float, N> out = a - b;
     out(6) = normalize_angle180(out(6));
     out(7) = normalize_angle180(out(7));
@@ -299,7 +300,7 @@ Eigen::Vector<float, N> sr_ukf::state_residual(Eigen::Vector<float, N> a, Eigen:
     return out;
 }
 
-Eigen::Vector<float, N> sr_ukf::state_add(Eigen::Vector<float, N> a, Eigen::Vector<float, N> b) {
+Eigen::Vector<float, N> sr_ukf::state_add(const Eigen::Vector<float, N>& a, const Eigen::Vector<float, N>& b) {
     Eigen::Vector<float, N> out = a + b;
     out(6) = normalize_angle180(out(6));
     out(7) = normalize_angle180(out(7));
@@ -308,7 +309,7 @@ Eigen::Vector<float, N> sr_ukf::state_add(Eigen::Vector<float, N> a, Eigen::Vect
     return out;
 }
 
-Eigen::Vector<float, ROWS> sr_ukf::measurement_residual(Eigen::Vector<float, ROWS> a, Eigen::Vector<float, ROWS> b) {
+Eigen::Vector<float, ROWS> sr_ukf::measurement_residual(const Eigen::Vector<float, ROWS>& a, const Eigen::Vector<float, ROWS>& b) {
     Eigen::Vector<float, ROWS> out = a - b;
     out(2) = normalize_angle180(out(2));
 

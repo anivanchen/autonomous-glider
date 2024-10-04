@@ -11,20 +11,20 @@
 
 class sr_ukf {
     public:
-    sr_ukf(Eigen::Vector<float, N> initial_state, Eigen::Vector<float, N> initial_stddevs, Eigen::Vector<float, N> process_stddevs, Eigen::Vector<float, ROWS> measurement_stddevs, g_point reference_pose);
+    sr_ukf(const Eigen::Vector<float, N>& initial_state, const Eigen::Vector<float, N>& initial_stddevs, const Eigen::Vector<float, N>& process_stddevs, const Eigen::Vector<float, ROWS>& measurement_stddevs, const g_point& reference_pose);
 
-    void set_contR(Eigen::Vector<float, ROWS> new_R);
-    void update(Eigen::Vector<float, ROWS> u, float dt);
-    void predict(Eigen::Vector<float, INPUTS> u, float dt);
+    void set_contR(const Eigen::Vector<float, ROWS>& new_R);
+    void update(const Eigen::Vector<float, ROWS>& u, const float& dt);
+    void predict(const Eigen::Vector<float, INPUTS>& u, const float& dt);
 
     void discretize_aq(const Eigen::Matrix<float, N, N>& cont_a, const Eigen::Matrix<float, N, N>& cont_q, float dt, Eigen::Matrix<float, N, N>* disc_a, Eigen::Matrix<float, N, N>* disc_q);
     Eigen::Matrix<float, 2 * N, 2 * N> mat_exp(const Eigen::Matrix<float, 2 * N, 2 * N>& A);
 
-    Eigen::Vector<float, N> get_xhat();
-    void set_xhat(Eigen::Vector<float, N> new_xhat);
-    Eigen::Matrix<float, N, N> get_s();
+    Eigen::Vector<float, N>& get_xhat();
+    void set_xhat(const Eigen::Vector<float, N>& new_xhat);
+    Eigen::Matrix<float, N, N>& get_s();
 
-    Eigen::Vector<float, ROWS> h_gps(Eigen::Vector<float, N> x);
+    Eigen::Vector<float, ROWS> h_gps(const Eigen::Vector<float, N>& x);
 
     private:
     Eigen::Vector<float, N> m_xhat;
@@ -38,19 +38,19 @@ class sr_ukf {
 
 
     
-    Eigen::Vector<float, N + INPUTS> process_model(Eigen::Vector<float, N + INPUTS> x);
-    Eigen::Vector<float, N> rk4(Eigen::Vector<float, N> x, Eigen::Vector<float, INPUTS> u, float dt);
+    Eigen::Vector<float, N + INPUTS> process_model(const Eigen::Vector<float, N + INPUTS>& x);
+    Eigen::Vector<float, N> rk4(const Eigen::Vector<float, N>& x, const Eigen::Vector<float, INPUTS>& u, const float& dt);
 
     
-    Eigen::Vector<float, ROWS> measurement_mean(Eigen::Matrix<float, ROWS, 2 * N + 1> sigmas, Eigen::Vector<float, 2 * N + 1> wm);
-    Eigen::Vector<float, ROWS> measurement_residual(Eigen::Vector<float, ROWS> a, Eigen::Vector<float, ROWS> b);
+    Eigen::Vector<float, ROWS> measurement_mean(const Eigen::Matrix<float, ROWS, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm);
+    Eigen::Vector<float, ROWS> measurement_residual(const Eigen::Vector<float, ROWS>& a, const Eigen::Vector<float, ROWS>& b);
     
 
     float normalize_angle180(float x);
     float normalize_angle360(float x);
-    Eigen::Vector<float, N> state_mean(Eigen::Matrix<float, N, 2 * N + 1> sigmas, Eigen::Vector<float, 2 * N + 1> wm);
-    Eigen::Vector<float, N> state_residual(Eigen::Vector<float, N> a, Eigen::Vector<float, N> b);
-    Eigen::Vector<float, N> state_add(Eigen::Vector<float, N> a, Eigen::Vector<float, N> b);
+    Eigen::Vector<float, N> state_mean(const Eigen::Matrix<float, N, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm);
+    Eigen::Vector<float, N> state_residual(const Eigen::Vector<float, N> a, const Eigen::Vector<float, N>& b);
+    Eigen::Vector<float, N> state_add(const Eigen::Vector<float, N>& a, const Eigen::Vector<float, N>& b);
 
 };
 
