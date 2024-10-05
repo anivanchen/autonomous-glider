@@ -31,7 +31,7 @@ c_point geodetic_to_enu(g_point ref_geo, g_point geo_point);
 c_point ecef_to_enu(c_point ref_ecef, c_point ecef_point);
 g_point ecef_to_geodetic(c_point ecef);
 
-c_point enu_to_ecef();
+c_point enu_to_ecef(c_point ref_ecef, c_point enu_point);
 g_point enu_to_geodetic(c_point ref_ecef, c_point enu_point);
 g_point enu_to_geodetic(g_point ref_geo, g_point geo_point);
 

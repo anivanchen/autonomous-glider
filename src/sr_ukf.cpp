@@ -13,10 +13,6 @@ sr_ukf::sr_ukf(const Eigen::Vector<float, N>& initial_state, const Eigen::Vector
     m_reference_pose = geodetic_to_ecef(reference_pose);
 }
 
-void sr_ukf::set_contR(const Eigen::Vector<float, ROWS>& new_R) {
-    m_contR = new_R.asDiagonal();
-}
-
 void sr_ukf::predict(const Eigen::Vector<float, INPUTS>& u, const float& dt) {
     // discretize the noise model
     Eigen::Matrix<float, N, N> cont_a;
@@ -60,9 +56,6 @@ void sr_ukf::predict(const Eigen::Vector<float, INPUTS>& u, const float& dt) {
     Eigen::internal::llt_inplace<float, Eigen::Upper>::rankUpdate(S, state_residual(m_sigmasf.col(0), m_xhat), wc(0));
     m_S = S;
 }
-
-
-
 
 void sr_ukf::update(const Eigen::Vector<float, ROWS>& y, const float& dt) {
     // discretize the noise model
@@ -114,8 +107,65 @@ void sr_ukf::update(const Eigen::Vector<float, ROWS>& y, const float& dt) {
     }
 }
 
+void sr_ukf::set_contR(const Eigen::Vector<float, ROWS>& new_R) {
+    m_contR = new_R.asDiagonal();
+}
 
+void sr_ukf::set_xhat(const Eigen::Vector<float, N>& new_xhat) {
+    m_xhat = new_xhat;
+}
 
+Eigen::Vector<float, N>& sr_ukf::get_xhat() {
+    return m_xhat;
+}
+
+Eigen::Matrix<float, N, N>& sr_ukf::get_s() {
+    return m_S;
+}
+
+Eigen::Vector<float, ROWS> sr_ukf::h_gps(const Eigen::Vector<float, N>& x) {
+    c_point pose = {x(0), x(1), x(2)};
+    g_point g_pose = enu_to_geodetic(m_reference_pose, pose);
+    Eigen::Vector<float, ROWS> out = {(float) g_pose.lat, (float) g_pose.lon, (float) g_pose.height};
+
+    return out;
+}
+
+// private methods
+
+Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(const Eigen::Vector<float, N + INPUTS>& in) {
+    float xdotdot = in(9);
+    float ydotdot = in(10);
+    float zdotdot = in(11);
+    float xdot = in(3);
+    float ydot = in(4);
+    float zdot = in(5);
+    float psidot = in(12);
+    float thetadot = in(13);
+    float phidot = in(14);
+
+    return Eigen::Vector<float, N + INPUTS>{xdot, ydot, zdot, xdotdot, ydotdot, zdotdot, psidot, thetadot, phidot, 0, 0, 0, 0, 0, 0};
+}
+
+Eigen::Vector<float, N> sr_ukf::rk4(const Eigen::Vector<float, N>& x, const Eigen::Vector<float, INPUTS>& u, const float& dt) {
+    float h = dt;
+    // concatenate x and u vectors so rk4 can operate on it as one vector
+    Eigen::Vector<float, N + INPUTS> x_u;
+    x_u << x, u;
+
+    Eigen::Vector<float, N + INPUTS> k_1 = process_model(x_u);
+    Eigen::Vector<float, N + INPUTS> k_2 = process_model(x_u + (k_1 * (h / 2)));
+    Eigen::Vector<float, N + INPUTS> k_3 = process_model(x_u + (k_2 * (h / 2)));
+    Eigen::Vector<float, N + INPUTS> k_4 = process_model(x_u + (k_3 * h));
+
+    // remove u from each vector
+    Eigen::Vector<float, N> xk_1 = k_1.block<N, 1>(0, 0);
+    Eigen::Vector<float, N> xk_2 = k_2.block<N, 1>(0, 0);
+    Eigen::Vector<float, N> xk_3 = k_3.block<N, 1>(0, 0);
+    Eigen::Vector<float, N> xk_4 = k_4.block<N, 1>(0, 0);
+
+    return (x + ((h / 6) * (xk_1 + (2 * xk_2) + (2 * xk_3) + xk_4)));
+}
 
 void sr_ukf::discretize_aq(const Eigen::Matrix<float, N, N>& cont_a, const Eigen::Matrix<float, N, N>& cont_q, float dt, Eigen::Matrix<float, N, N>* disc_a, Eigen::Matrix<float, N, N>* disc_q) {
     Eigen::Matrix<float, N, N> Q = (cont_q * cont_q.transpose());
@@ -182,58 +232,50 @@ Eigen::Matrix<float, 2 * N, 2 * N> sr_ukf::mat_exp(const Eigen::Matrix<float, 2 
     return expA;
 }
 
-Eigen::Vector<float, N>& sr_ukf::get_xhat() {
-    return m_xhat;
+float sr_ukf::normalize_angle180(float x) {
+    x = fmod(x + M_PI, 2 * M_PI);
+    if (x < 0) {
+        x += (2 * M_PI);
+    }
+    return x - M_PI;
 }
 
-void sr_ukf::set_xhat(const Eigen::Vector<float, N>& new_xhat) {
-    m_xhat = new_xhat;
+float sr_ukf::normalize_angle360(float x) {
+    x = fmod(x, 2 * M_PI);
+    if (x < 0) {
+        x += (2 * M_PI);
+    }
+    return x;
 }
 
-Eigen::Matrix<float, N, N>& sr_ukf::get_s() {
-    return m_S;
+Eigen::Vector<float, ROWS> sr_ukf::measurement_mean(const Eigen::Matrix<float, ROWS, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
+    Eigen::Vector<float, ROWS> x;
+    x.fill(0);
+
+    float latsum_sin = 0;
+    float latsum_cos = 0;
+    float lonsum_sin = 0;
+    float lonsum_cos = 0;
+
+    for (int i = 0; i < (2 * N + 1); i++) {
+        // assume r,theta..... rewrite for glider (will be easier)
+        x(0) += sigmas(0, i) * wm(i);
+        latsum_sin += std::sin(sigmas(1, i)) * wm(i);
+        latsum_cos += std::cos(sigmas(1, i)) * wm(i);
+        lonsum_sin += std::sin(sigmas(1, i)) * wm(i);
+        lonsum_cos += std::cos(sigmas(1, i)) * wm(i);
+    }
+
+    x(1) = std::atan2(latsum_sin, latsum_cos);
+    x(2) = std::atan2(lonsum_sin, lonsum_cos);
+    return x;
 }
 
-Eigen::Vector<float, ROWS> sr_ukf::h_gps(const Eigen::Vector<float, N>& x) {
-    c_point pose = {x(0), x(1), x(2)};
-    g_point g_pose = enu_to_geodetic(m_reference_pose, pose);
-    Eigen::Vector<float, ROWS> out = {(float) g_pose.lat, (float) g_pose.lon, (float) g_pose.height};
+Eigen::Vector<float, ROWS> sr_ukf::measurement_residual(const Eigen::Vector<float, ROWS>& a, const Eigen::Vector<float, ROWS>& b) {
+    Eigen::Vector<float, ROWS> out = a - b;
+    out(2) = normalize_angle180(out(2));
 
     return out;
-}
-
-Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(const Eigen::Vector<float, N + INPUTS>& in) {
-    float xdotdot = in(9);
-    float ydotdot = in(10);
-    float zdotdot = in(11);
-    float xdot = in(3);
-    float ydot = in(4);
-    float zdot = in(5);
-    float psidot = in(12);
-    float thetadot = in(13);
-    float phidot = in(14);
-
-    return Eigen::Vector<float, N + INPUTS>{xdot, ydot, zdot, xdotdot, ydotdot, zdotdot, psidot, thetadot, phidot, 0, 0, 0, 0, 0, 0};
-}
-
-Eigen::Vector<float, N> sr_ukf::rk4(const Eigen::Vector<float, N>& x, const Eigen::Vector<float, INPUTS>& u, const float& dt) {
-    float h = dt;
-    // concatenate x and u vectors so rk4 can operate on it as one vector
-    Eigen::Vector<float, N + INPUTS> x_u;
-    x_u << x, u;
-
-    Eigen::Vector<float, N + INPUTS> k_1 = process_model(x_u);
-    Eigen::Vector<float, N + INPUTS> k_2 = process_model(x_u + (k_1 * (h / 2)));
-    Eigen::Vector<float, N + INPUTS> k_3 = process_model(x_u + (k_2 * (h / 2)));
-    Eigen::Vector<float, N + INPUTS> k_4 = process_model(x_u + (k_3 * h));
-
-    // remove u from each vector
-    Eigen::Vector<float, N> xk_1 = k_1.block<N, 1>(0, 0);
-    Eigen::Vector<float, N> xk_2 = k_2.block<N, 1>(0, 0);
-    Eigen::Vector<float, N> xk_3 = k_3.block<N, 1>(0, 0);
-    Eigen::Vector<float, N> xk_4 = k_4.block<N, 1>(0, 0);
-
-    return (x + ((h / 6) * (xk_1 + (2 * xk_2) + (2 * xk_3) + xk_4)));
 }
 
 Eigen::Vector<float, N> sr_ukf::state_mean(const Eigen::Matrix<float, N, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
@@ -268,29 +310,6 @@ Eigen::Vector<float, N> sr_ukf::state_mean(const Eigen::Matrix<float, N, 2 * N +
     return x;
 }
 
-Eigen::Vector<float, ROWS> sr_ukf::measurement_mean(const Eigen::Matrix<float, ROWS, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
-    Eigen::Vector<float, ROWS> x;
-    x.fill(0);
-
-    float latsum_sin = 0;
-    float latsum_cos = 0;
-    float lonsum_sin = 0;
-    float lonsum_cos = 0;
-
-    for (int i = 0; i < (2 * N + 1); i++) {
-        // assume r,theta..... rewrite for glider (will be easier)
-        x(0) += sigmas(0, i) * wm(i);
-        latsum_sin += std::sin(sigmas(1, i)) * wm(i);
-        latsum_cos += std::cos(sigmas(1, i)) * wm(i);
-        lonsum_sin += std::sin(sigmas(1, i)) * wm(i);
-        lonsum_cos += std::cos(sigmas(1, i)) * wm(i);
-    }
-
-    x(1) = std::atan2(latsum_sin, latsum_cos);
-    x(2) = std::atan2(lonsum_sin, lonsum_cos);
-    return x;
-}
-
 Eigen::Vector<float, N> sr_ukf::state_residual(const Eigen::Vector<float, N> a, const Eigen::Vector<float, N>& b) {
     Eigen::Vector<float, N> out = a - b;
     out(6) = normalize_angle180(out(6));
@@ -308,29 +327,3 @@ Eigen::Vector<float, N> sr_ukf::state_add(const Eigen::Vector<float, N>& a, cons
 
     return out;
 }
-
-Eigen::Vector<float, ROWS> sr_ukf::measurement_residual(const Eigen::Vector<float, ROWS>& a, const Eigen::Vector<float, ROWS>& b) {
-    Eigen::Vector<float, ROWS> out = a - b;
-    out(2) = normalize_angle180(out(2));
-
-    return out;
-}
-
-
-
-float sr_ukf::normalize_angle180(float x) {
-    x = fmod(x + M_PI, 2 * M_PI);
-    if (x < 0) {
-        x += (2 * M_PI);
-    }
-    return x - M_PI;
-}
-
-float sr_ukf::normalize_angle360(float x) {
-    x = fmod(x, 2 * M_PI);
-    if (x < 0) {
-        x += (2 * M_PI);
-    }
-    return x;
-}
-
