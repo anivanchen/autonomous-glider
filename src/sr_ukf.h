@@ -1,13 +1,15 @@
 #ifndef SR_UKF_
 #define SR_UKF_
 
-#define N 9
-#define INPUTS 6
+#define N 6
+#define INPUTS 3
 #define ROWS 3
 
 #include <Eigen/Dense>
 #include "merwe_scaled_sigma_generator.h"
 #include "spherical_conversions.h"
+
+
 
 class sr_ukf {
     public:

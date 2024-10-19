@@ -15,20 +15,7 @@ sr_ukf::sr_ukf(const Eigen::Vector<float, N>& initial_state, const Eigen::Vector
 
 void sr_ukf::predict(const Eigen::Vector<float, INPUTS>& u, const float& dt) {
     // discretize the noise model
-    Eigen::Matrix<float, N, N> cont_a;
-    cont_a.setZero();
-    for (int i = 0; i < N; ++i) {
-        Eigen::Vector<float, N> dx_plus = m_xhat;
-        dx_plus(i) += 1e-5;
-        Eigen::Vector<float, N> dx_minus = m_xhat;
-        dx_minus(i) -= 1e-5;
-        cont_a.col(i) = (rk4(dx_plus, u, dt) - rk4(dx_minus, u, dt)) / (1e-5 * 2);
-    }
-    Eigen::Matrix<float, N, N> disc_a;
-    Eigen::Matrix<float, N, N> disc_q;
-
-    discretize_aq(cont_a, m_contQ, dt, &disc_a, &disc_q);
-    Eigen::internal::llt_inplace<float, Eigen::Lower>::blocked(disc_q);
+    Eigen::Matrix<float, N, N> disc_q = m_contQ * sqrt(dt);
 
 
     // generate sigma points
@@ -59,7 +46,7 @@ void sr_ukf::predict(const Eigen::Vector<float, INPUTS>& u, const float& dt) {
 
 void sr_ukf::update(const Eigen::Vector<float, ROWS>& y, const float& dt) {
     // discretize the noise model
-    Eigen::Matrix<float, ROWS, ROWS> disc_r = m_contR / std::sqrt(dt);
+    Eigen::Matrix<float, ROWS, ROWS> disc_r = m_contR * sqrt(dt);
 
     // project sigmas through measurement function, they become predicted measurements at their state (merwe 22)
     Eigen::Matrix<float, ROWS, 2 * N + 1> h_sigmas;
@@ -140,11 +127,9 @@ Eigen::Vector<float, N + INPUTS> sr_ukf::process_model(const Eigen::Vector<float
     float xdot = in(3);
     float ydot = in(4);
     float zdot = in(5);
-    float psidot = in(12);
-    float thetadot = in(13);
-    float phidot = in(14);
 
-    return Eigen::Vector<float, N + INPUTS>{xdot, ydot, zdot, xdotdot, ydotdot, zdotdot, psidot, thetadot, phidot, 0, 0, 0, 0, 0, 0};
+
+    return Eigen::Vector<float, N + INPUTS>{xdot, ydot, zdot, xdotdot, ydotdot, zdotdot, 0, 0, 0};
 }
 
 Eigen::Vector<float, N> sr_ukf::rk4(const Eigen::Vector<float, N>& x, const Eigen::Vector<float, INPUTS>& u, const float& dt) {
@@ -165,71 +150,6 @@ Eigen::Vector<float, N> sr_ukf::rk4(const Eigen::Vector<float, N>& x, const Eige
     Eigen::Vector<float, N> xk_4 = k_4.block<N, 1>(0, 0);
 
     return (x + ((h / 6) * (xk_1 + (2 * xk_2) + (2 * xk_3) + xk_4)));
-}
-
-void sr_ukf::discretize_aq(const Eigen::Matrix<float, N, N>& cont_a, const Eigen::Matrix<float, N, N>& cont_q, float dt, Eigen::Matrix<float, N, N>* disc_a, Eigen::Matrix<float, N, N>* disc_q) {
-    Eigen::Matrix<float, N, N> Q = (cont_q * cont_q.transpose());
-
-    Eigen::Matrix<float, 2 * N, 2 * N> M;
-    M.block<N, N>(0, 0) = -cont_a;
-    M.block<N, N>(0, N) = Q;
-    M.block<N, N>(N, 0).setZero();
-    M.block<N, N>(N, N) = cont_a.transpose();
-
-    Eigen::Matrix<float, 2 * N, 2 * N> phi = mat_exp(M * dt);
-
-    Eigen::Matrix<float, N, N> phi12 = phi.block(0, N, N, N);
-
-    Eigen::Matrix<float, N, N> phi22 = phi.block(N, N, N, N);
-
-    *disc_a = phi22.transpose();
-
-    Q = *disc_a * phi12;
-
-    Eigen::LLT<Eigen::Matrix<float, N, N>> llt_of_q(Q);
-    *disc_q = llt_of_q.matrixL();
-}
-
-Eigen::Matrix<float, 2 * N, 2 * N> sr_ukf::mat_exp(const Eigen::Matrix<float, 2 * N, 2 * N>& A) {    
-    int n = A.rows(); // size of the matrix
-    int s = 0;        // scaling factor for the matrix
-
-    // compute the norm of the matrix (1-norm, which is the maximum absolute column sum)
-    double normA = A.cwiseAbs().colwise().sum().maxCoeff();
-
-    // if norm is too big scale down
-    if (normA > 0.5) {
-        s = std::max(0, static_cast<int>(std::ceil(std::log2(normA / 0.5))));
-    }
-
-    // scale the matrix by 2^(-s)
-    Eigen::Matrix<float, 2 * N, 2 * N> A_scaled = A / std::pow(2.0, s);
-
-    // compute [7/7] pade approximant for the scaled matrix
-    Eigen::Matrix<float, 2 * N, 2 * N> X = A_scaled;
-    double c = 0.5;
-    Eigen::Matrix<float, 2 * N, 2 * N> E = Eigen::Matrix<float, 2 * N, 2 * N>::Identity(n, n) + c * A_scaled;
-    Eigen::Matrix<float, 2 * N, 2 * N> D = Eigen::Matrix<float, 2 * N, 2 * N>::Identity(n, n) - c * A_scaled;
-    bool positive = true;
-
-    for (int k = 2; k <= 7; ++k) {
-        c = c * (7 - k + 1) / (k * (2 * 7 - k + 1));
-        X = A_scaled * X;
-        Eigen::Matrix<float, 2 * N, 2 * N> cX = c * X;
-        E = E + (positive ? cX : -cX);
-        D = D + (positive ? cX : -cX);
-        positive = !positive;
-    }
-
-    // solve D * expA = E to get the matrix exponential
-    Eigen::Matrix<float, 2 * N, 2 * N> expA = D.lu().solve(E);
-
-    // scale back up by squaring matrix
-    for (int i = 0; i < s; ++i) {
-        expA = expA * expA;
-    }
-
-    return expA;
 }
 
 float sr_ukf::normalize_angle180(float x) {
@@ -281,12 +201,7 @@ Eigen::Vector<float, ROWS> sr_ukf::measurement_residual(const Eigen::Vector<floa
 Eigen::Vector<float, N> sr_ukf::state_mean(const Eigen::Matrix<float, N, 2 * N + 1>& sigmas, const Eigen::Vector<float, 2 * N + 1>& wm) {
     Eigen::Vector<float, N> x;
 
-    float yawsum_sin = 0;
-    float yawsum_cos = 0;
-    float pitchsum_sin = 0;
-    float pitchsum_cos = 0;
-    float rollsum_sin = 0;
-    float rollsum_cos = 0;
+
 
     for (int i = 0; i < (2 * N + 1); i++) {
         // assume x,y,theta...... rewrite for glider :sob:
@@ -296,25 +211,15 @@ Eigen::Vector<float, N> sr_ukf::state_mean(const Eigen::Matrix<float, N, 2 * N +
         x(3) += sigmas(3, i) * wm(i);
         x(4) += sigmas(4, i) * wm(i);
         x(5) += sigmas(5, i) * wm(i);
-        yawsum_sin += std::sin(sigmas(2, i)) * wm(i);
-        yawsum_cos += std::cos(sigmas(2, i)) * wm(i);
-        pitchsum_sin += std::sin(sigmas(2, i)) * wm(i);
-        pitchsum_cos += std::cos(sigmas(2, i)) * wm(i);
-        rollsum_sin += std::sin(sigmas(2, i)) * wm(i);
-        rollsum_cos += std::cos(sigmas(2, i)) * wm(i);
+
     }
 
-    x(6) = std::atan2(yawsum_sin, yawsum_cos);
-    x(7) = std::atan2(pitchsum_sin, pitchsum_cos);
-    x(8) = std::atan2(rollsum_sin, rollsum_cos);
     return x;
 }
 
 Eigen::Vector<float, N> sr_ukf::state_residual(const Eigen::Vector<float, N> a, const Eigen::Vector<float, N>& b) {
     Eigen::Vector<float, N> out = a - b;
-    out(6) = normalize_angle180(out(6));
-    out(7) = normalize_angle180(out(7));
-    out(8) = normalize_angle180(out(8));
+
 
     return out;
 }

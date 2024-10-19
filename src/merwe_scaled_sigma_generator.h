@@ -1,7 +1,7 @@
 #ifndef MERWE_SCALED_SIGMA_GENERATOR_
 #define MERWE_SCALED_SIGMA_GENERATOR_
 
-#define N 9
+#define N 6
 
 #include <Eigen/Dense>
 
