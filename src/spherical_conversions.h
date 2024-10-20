@@ -1,6 +1,8 @@
 #ifndef SPHERICAL_CONVERSIONS_H_
 #define SPHERICAL_CONVERSIONS_H_
 
+#define EIGEN_NO_DEBUG
+
 struct c_point {
     double x;
     double y;

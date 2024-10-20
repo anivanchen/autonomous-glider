@@ -5,6 +5,8 @@
 #include "sr_ukf.h"
 #include "spherical_conversions.h"
 
+#define EIGEN_NO_DEBUG
+
 int main()
 {
     // the way we should go about doing this is

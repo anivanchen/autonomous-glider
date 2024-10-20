@@ -1,6 +1,8 @@
 #ifndef SR_UKF_
 #define SR_UKF_
 
+#define EIGEN_NO_DEBUG
+
 #define N 6
 #define INPUTS 3
 #define ROWS 3
