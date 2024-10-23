@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pico_sdk_init()
 
-add_subdirectory("icm20948")
+add_subdirectory("icm20948-official")
 
 add_executable(autonomous-glider src/main.cpp)
 
