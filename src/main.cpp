@@ -1,43 +1,183 @@
-#include <stdio.h>
+#include <iostream>
+#include <cstring>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-#include "../icm20948/icm20948.h"
+#include "../icm20948-official/icm20948.h"
+#include "../icm20948-official/ICM_20948_C.h"
 
-i2c_inst_t icm20948_i2c = {i2c1_hw, false};
-icm20948_config_t config = {0x68, 0x0C, &icm20948_i2c};
-icm20984_data_t data;
+#define I2C_ADDR ICM_20948_I2C_ADDR_AD1
 
-int main(void) {
-  stdio_init_all();
+// Define I2C pins
+#define I2C_SDA_PIN 4
+#define I2C_SCL_PIN 5
 
-  i2c_init(&icm20948_i2c, 400*1000);
-  gpio_set_function(14, GPIO_FUNC_I2C);
-  gpio_set_function(15, GPIO_FUNC_I2C);
+ICM_20948_Status_e my_write_i2c(uint8_t reg, uint8_t *data, uint32_t len, void *user)
+{
+    uint8_t buffer[len + 1];
+    buffer[0] = reg;
+    memcpy(&buffer[1], data, len);
 
-  sleep_ms(2000);
-  printf("PICO ALIVE\n");
-  if (icm20948_init(&config) == 0) printf("PICO INIT SUCCESSFUL\n");
+    int result = i2c_write_blocking(i2c0, I2C_ADDR, buffer, len + 1, false);
+    return (result == PICO_ERROR_GENERIC) ? ICM_20948_Stat_Err : ICM_20948_Stat_Ok;
+}
 
-  int16_t accel_raw[3] = {0}, gyro_raw[3] = {0}, mag_raw[3] = {0}, temp_raw = 0;
-  float accel_g[3] = {0}, gyro_dps[3] = {0}, mag_ut[3] = {0}, temp_c = 0;
-
-
-  while(1) {
-    icm20948_read_raw_accel(&config, accel_raw);
-    icm20948_read_raw_gyro(&config, gyro_raw);
-    icm20948_read_raw_mag(&config, mag_raw);
-    icm20948_read_temp_c(&config, &temp_c);
-
-    for (uint8_t i = 0; i < 3; i++) {
-        accel_g[i] = (float)accel_raw[i] / 16384.0f;
-        gyro_dps[i] = (float)gyro_raw[i] / 131.0f;
-        mag_ut[i] = ((float)mag_raw[i] / 20) * 3;
+ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t *buff, uint32_t len, void *user)
+{
+    int result = i2c_write_blocking(i2c0, I2C_ADDR, &reg, 1, true);
+    if (result == PICO_ERROR_GENERIC) {
+        return ICM_20948_Stat_Err;
     }
 
-    printf("accel. x: %+2.5f, y: %+2.5f, z:%+2.5f\n", accel_g[0], accel_g[1], accel_g[2]);
-    printf("gyro.  x: %+2.5f, y: %+2.5f, z:%+2.5f\n", gyro_dps[0], gyro_dps[1], gyro_dps[2]);
-    printf("mag.   x: %+2.5f, y: %+2.5f, z:%+2.5f\n", mag_ut[0], mag_ut[1], mag_ut[2]);
-    printf("temp: %+2.5f\n", temp_c);
-    sleep_ms(500);
+    result = i2c_read_blocking(i2c0, I2C_ADDR, buff, len, false);
+    return (result == PICO_ERROR_GENERIC) ? ICM_20948_Stat_Err : ICM_20948_Stat_Ok;
+}
+
+const ICM_20948_Serif_t mySerif = {
+    my_write_i2c, // write
+    my_read_i2c,  // read
+    NULL,
+};
+
+ICM_20948_Device_t myICM;
+
+void printRawAGMT(ICM_20948_AGMT_t agmt)
+{
+  std::cout << "RAW. Acc [ ";
+  std::cout << agmt.acc.axes.x;
+  std::cout << ", ";
+  std::cout << agmt.acc.axes.y;
+  std::cout << ", ";
+  std::cout << agmt.acc.axes.z;
+  std::cout << " ], Gyr [ ";
+  std::cout << agmt.gyr.axes.x;
+  std::cout << ", ";
+  std::cout << agmt.gyr.axes.y;
+  std::cout << ", ";
+  std::cout << agmt.gyr.axes.z;
+  std::cout << " ], Mag [ ";
+  std::cout << agmt.mag.axes.x;
+  std::cout << ", ";
+  std::cout << agmt.mag.axes.y;
+  std::cout << ", ";
+  std::cout << agmt.mag.axes.z;
+  std::cout << " ], Tmp [ ";
+  std::cout << agmt.tmp.val;
+  std::cout << " ]" << std::endl;
+}
+
+float getAccMG(int16_t raw, uint8_t fss)
+{
+  switch (fss)
+  {
+  case 0:
+    return (((float)raw) / 16.384);
+    break;
+  case 1:
+    return (((float)raw) / 8.192);
+    break;
+  case 2:
+    return (((float)raw) / 4.096);
+    break;
+  case 3:
+    return (((float)raw) / 2.048);
+    break;
+  default:
+    return 0;
+    break;
   }
+}
+
+float getGyrDPS(int16_t raw, uint8_t fss)
+{
+  switch (fss)
+  {
+  case 0:
+    return (((float)raw) / 131);
+    break;
+  case 1:
+    return (((float)raw) / 65.5);
+    break;
+  case 2:
+    return (((float)raw) / 32.8);
+    break;
+  case 3:
+    return (((float)raw) / 16.4);
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+float getMagUT(int16_t raw)
+{
+  return (((float)raw) * 0.15);
+}
+
+float getTmpC(int16_t raw)
+{
+  return (((float)raw) / 333.87);
+}
+
+int main() {
+    stdio_init_all();
+
+    ICM_20948_init_struct(&myICM);
+    ICM_20948_link_serif(&myICM, &mySerif);
+
+    while (ICM_20948_check_id(&myICM) != ICM_20948_Stat_Ok) {
+      std::cout << "whoami does not match. halting..." << std::endl;
+      sleep_ms(1000);
+    }
+
+    ICM_20948_Status_e stat = ICM_20948_Stat_Err;
+    uint8_t whoami = 0x00;
+
+    while((stat != ICM_20948_Stat_Ok) || (whoami != ICM_20948_WHOAMI)) {
+      whoami = 0x00;
+      stat = ICM_20948_get_who_am_i(&myICM, &whoami);
+      std::cout << "whoami does not match (0x" << whoami << "). halting..." << std::endl;
+      sleep_ms(1000);
+    }
+
+    ICM_20948_sw_reset(&myICM);
+    sleep_ms(250);
+    // Set Gyro and Accelerometer to a particular sample mode
+    ICM_20948_set_sample_mode(&myICM, (ICM_20948_InternalSensorID_bm)(ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous); // optiona: ICM_20948_Sample_Mode_Continuous. ICM_20948_Sample_Mode_Cycled
+
+    // Set full scale ranges for both acc and gyr
+    ICM_20948_fss_t myfss;
+    myfss.a = gpm2;   // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+    myfss.g = dps250; // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+    ICM_20948_set_full_scale(&myICM, (ICM_20948_InternalSensorID_bm)(ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myfss);
+
+    // Set up DLPF configuration
+    ICM_20948_dlpcfg_t myDLPcfg;
+    myDLPcfg.a = acc_d473bw_n499bw;
+    myDLPcfg.g = gyr_d361bw4_n376bw5;
+    ICM_20948_set_dlpf_cfg(&myICM, (ICM_20948_InternalSensorID_bm)(ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myDLPcfg);
+
+    // Choose whether or not to use DLPF
+    ICM_20948_enable_dlpf(&myICM, ICM_20948_Internal_Acc, false);
+    ICM_20948_enable_dlpf(&myICM, ICM_20948_Internal_Gyr, false);
+
+    // Now wake the sensor up
+    ICM_20948_sleep(&myICM, false);
+    ICM_20948_low_power(&myICM, false);
+
+    while (1) {
+        ICM_20948_AGMT_t agmt = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0}};
+        if (ICM_20948_get_agmt(&myICM, &agmt) == ICM_20948_Stat_Ok)
+        {
+          printRawAGMT(agmt);
+        }
+        else
+        {
+          std::cout << "Uh oh" << std::endl;
+        }
+
+        sleep_ms(1000);
+    }
+
+    return 0;
 }
