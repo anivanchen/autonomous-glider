@@ -8,14 +8,16 @@
 #define I2C_ADDR ICM_20948_I2C_ADDR_AD1
 
 // Define I2C pins
-#define I2C_SDA_PIN 4
-#define I2C_SCL_PIN 5
+#define I2C_SDA_PIN 2
+#define I2C_SCL_PIN 3
 
 ICM_20948_Status_e my_write_i2c(uint8_t reg, uint8_t *data, uint32_t len, void *user)
 {
     uint8_t buffer[len + 1];
     buffer[0] = reg;
     memcpy(&buffer[1], data, len);
+
+    std::cout << "Write to I2C" << std::endl;
 
     int result = i2c_write_blocking(i2c0, I2C_ADDR, buffer, len + 1, false);
     return (result == PICO_ERROR_GENERIC) ? ICM_20948_Stat_Err : ICM_20948_Stat_Ok;
@@ -28,6 +30,8 @@ ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t *buff, uint32_t len, void *u
         return ICM_20948_Stat_Err;
     }
 
+    std::cout << "Read from I2C" << std::endl;
+
     result = i2c_read_blocking(i2c0, I2C_ADDR, buff, len, false);
     return (result == PICO_ERROR_GENERIC) ? ICM_20948_Stat_Err : ICM_20948_Stat_Ok;
 }
@@ -36,6 +40,7 @@ const ICM_20948_Serif_t mySerif = {
     my_write_i2c, // write
     my_read_i2c,  // read
     NULL,
+    {i2c0_hw, false}
 };
 
 ICM_20948_Device_t myICM;
@@ -130,6 +135,11 @@ int main() {
       sleep_ms(1000);
     }
 
+    while(1) {
+      std::cout << "Hello" << std::endl;
+      sleep_ms(100);
+    }
+
     ICM_20948_Status_e stat = ICM_20948_Stat_Err;
     uint8_t whoami = 0x00;
 
@@ -166,17 +176,19 @@ int main() {
     ICM_20948_low_power(&myICM, false);
 
     while (1) {
-        ICM_20948_AGMT_t agmt = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0}};
-        if (ICM_20948_get_agmt(&myICM, &agmt) == ICM_20948_Stat_Ok)
-        {
-          printRawAGMT(agmt);
-        }
-        else
-        {
-          std::cout << "Uh oh" << std::endl;
-        }
+        // ICM_20948_AGMT_t agmt = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0}};
+        // if (ICM_20948_get_agmt(&myICM, &agmt) == ICM_20948_Stat_Ok)
+        // {
+        //   printRawAGMT(agmt);
+        // }
+        // else
+        // {
+        //   std::cout << "Uh oh" << std::endl;
+        // }
 
-        sleep_ms(1000);
+        // sleep_ms(1000);
+
+        std::cout << "Hello" << std::endl;
     }
 
     return 0;
