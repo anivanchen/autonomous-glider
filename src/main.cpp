@@ -10,7 +10,7 @@
 #define I2C_SDA_PIN 4
 #define I2C_SCL_PIN 5
 
-ICM_20948_Status_e my_write_i2c(uint8_t reg, uint8_t *data, uint32_t len, void *user)
+ICM_20948_Status_e ICM_20948_write_I2C(uint8_t reg, uint8_t *data, uint32_t len, void *user)
 {
     i2c_inst_t *i2c = (i2c_inst_t *)user;
     i2c_write_blocking(i2c, I2C_ADDR, &reg, 1, true);
@@ -18,7 +18,7 @@ ICM_20948_Status_e my_write_i2c(uint8_t reg, uint8_t *data, uint32_t len, void *
     return ICM_20948_Stat_Ok;
 }
 
-ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t *buff, uint32_t len, void *user)
+ICM_20948_Status_e ICM_20948_read_I2C(uint8_t reg, uint8_t *buff, uint32_t len, void *user)
 {
     i2c_inst_t *i2c = (i2c_inst_t *)user;
     i2c_write_blocking(i2c, I2C_ADDR, &reg, 1, true);
@@ -27,8 +27,8 @@ ICM_20948_Status_e my_read_i2c(uint8_t reg, uint8_t *buff, uint32_t len, void *u
 }
 
 const ICM_20948_Serif_t mySerif = {
-    my_write_i2c, // write
-    my_read_i2c,  // read
+    ICM_20948_write_I2C, // write
+    ICM_20948_read_I2C,  // read
     NULL
 };
 
@@ -122,6 +122,11 @@ int main() {
 
     while (1) {
       std::cout << "Hello World" << std::endl;
+
+      sleep_ms(1000);
+
+      // ICM_20948_AGMT_t agmt = myICM.getAGMT();
+      // printRawAGMT(agmt);
     }
 
     // myICM._serif = &mySerif;
