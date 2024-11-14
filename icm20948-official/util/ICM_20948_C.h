@@ -11,7 +11,6 @@ The imementation of the interface is flexible
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "hardware/i2c.h"
 
 #include "ICM_20948_REGISTERS.h"
 #include "ICM_20948_ENUMERATIONS.h" // This is to give users access to usable value definiitons
@@ -162,7 +161,6 @@ extern int memcmp(const void *, const void *, size_t); // Avoid compiler warning
     ICM_20948_Status_e (*read)(uint8_t regaddr, uint8_t *pdata, uint32_t len, void *user);
     // void				(*delay)(uint32_t ms);
     void *user;
-    const i2c_inst_t icm20948_i2c;
   } ICM_20948_Serif_t;                      // This is the vtable of serial interface functions
   extern const ICM_20948_Serif_t NullSerif; // Here is a default for initialization (NULL)
 
