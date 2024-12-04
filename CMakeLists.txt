@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.30)
 
 include(pico_sdk_import.cmake)
 
@@ -11,11 +11,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pico_sdk_init()
 
-add_subdirectory("icm20948-official")
+add_executable(autonomous-glider src/main.cpp src/icm20948.cpp)
 
-add_executable(autonomous-glider src/main.cpp)
-
-target_link_libraries(autonomous-glider PRIVATE pico_stdlib hardware_i2c icm20948)
+target_link_libraries(autonomous-glider PRIVATE pico_stdlib hardware_i2c)
 
 pico_enable_stdio_usb(autonomous-glider 1)
 pico_enable_stdio_uart(autonomous-glider 0)
