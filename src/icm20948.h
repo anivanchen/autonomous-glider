@@ -17,6 +17,8 @@
 /* Register Definitions */
 /************************/
 
+// clang-format off
+
 #define ICM20948_BANK0_REG_COUNT            65
 #define ICM20948_BANK1_REG_COUNT            14
 #define ICM20948_BANK2_REG_COUNT            20
@@ -179,9 +181,7 @@
 #define B3_I2C_SLV4_DO	            0x16
 #define B3_I2C_SLV4_DI	            0x17
 
-typedef int8_t(*icm20948_read_ptr_t)(const uint8_t addr, uint8_t *data, const uint32_t len);
-typedef int8_t(*icm20948_write_ptr_t)(const uint8_t addr, const uint8_t *data, const uint32_t len);
-typedef void(*icm20948_delay_us_ptr_t)(uint32_t period);
+// clang-format on
 
 typedef enum {
     ICM20948_RET_OK = 0,
@@ -190,67 +190,36 @@ typedef enum {
     ICM20948_RET_NULL_PTR   = -3,
     ICM20948_RET_INV_CONFIG = -4,
     ICM20948_RET_TIMEOUT   = -5
-} icm20948_return_code_t;
-
-typedef enum {
-    ICM20948_MOD_DISABLED = 0x00,
-    ICM20948_MOD_ENABLED
-} icm20948_mod_enable_t;
-
-typedef enum {
-    ICM20948_GYRO_FS_SEL_250DPS = 0x00,
-    ICM20948_GYRO_FS_SEL_500DPS = 0x01,
-    ICM20948_GYRO_FS_SEL_1000DPS = 0x02,
-    ICM20948_GYRO_FS_SEL_2000DPS = 0x03
-} icm20948_gyro_full_scale_select_t;
-
-typedef struct {
-    icm20948_mod_enable_t en;
-    icm20948_gyro_full_scale_select_t fs;
-} icm20948_gyro_settings_t;
-
-typedef enum {
-    ICM20948_ACCEL_FS_SEL_2G = 0x00,
-    ICM20948_ACCEL_FS_SEL_4G = 0x01,
-    ICM20948_ACCEL_FS_SEL_8G = 0x02,
-    ICM20948_ACCEL_FS_SEL_16G = 0x03
-} icm20948_accel_full_scale_select_t;
-
-typedef struct {
-    icm20948_mod_enable_t en;
-    icm20948_accel_full_scale_select_t fs;
-} icm20948_accel_settings_t;
-
-typedef struct {
-    icm20948_mod_enable_t en;
-} icm20948_mag_settings_t;
-
-typedef struct {
-    icm20948_gyro_settings_t gyro;
-    icm20948_accel_settings_t accel;
-    icm20948_mag_settings_t mag;
-} icm20948_settings_t;
+} icm20948_return_code_t; 
 
 typedef struct {
     int16_t x;
+    int16_t raw_x;
     int16_t y;
+    int16_t raw_y;
     int16_t z;
+    int16_t raw_z;
 } icm20948_gyro_t;
 
 typedef struct {
     int16_t x;
+    int16_t raw_x;
     int16_t y;
+    int16_t raw_y;
     int16_t z;
+    int16_t raw_z;
 } icm20948_accel_t;
 
 typedef struct {
     int16_t x;
+    int16_t raw_x;
     int16_t y;
+    int16_t raw_y;
     int16_t z;
+    int16_t raw_z;
 } icm20948_mag_t;
 
 icm20948_return_code_t icm20948_init();
-icm20948_return_code_t icm20948_applySettings(icm20948_settings_t *newSettings);
 
 icm20948_return_code_t icm20948_getGyroData(icm20948_gyro_t *data);
 icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data);
