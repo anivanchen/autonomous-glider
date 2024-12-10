@@ -54,6 +54,12 @@ icm20948_return_code_t icm20948_init() {
   data[1] = 0x00;
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
+  // Configure temp
+
+  data[0] = B2_TEMP_CONFIG;
+  data[1] = 0x02;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
   // Change to user bank 0
   data[0] = ICM20948_REG_BANK_SEL;
   data[1] = ICM20948_USER_BANK_0;
@@ -140,9 +146,12 @@ icm20948_return_code_t icm20948_getTempData() {
   uint8_t reg = B0_TEMP_OUT_H;
   uint8_t tempData[2];
   i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
-  i2c_read_blocking(I2C_PORT, I2C_ADDR, tempData, 6, false);
+  i2c_read_blocking(I2C_PORT, I2C_ADDR, tempData, 2, false);
 
-  printf("Temp: %d\n", tempData[1]);
+  uint16_t raw_temp = (int16_t)(tempData[0] << 8 | tempData[1]);
+  int16_t temp_c = (int16_t)(raw_temp / 333.87 + 21.0);
+
+  printf("Temp: %d\n", temp_c);
 
   return ICM20948_RET_OK;
 }
