@@ -15,16 +15,15 @@ int main() {
 
   icm20948_init();
 
-
   // Primary loop
 
   while (1) {
 
-    sleep_ms(250);
+    // icm20948_gyro_t gyroData;
+    icm20948_accel_t acceldata;
 
-    icm20948_gyro_t gyroData;
-
-    icm20948_getGyroData(&gyroData);
+    // icm20948_getGyroData(&gyroData);
+    icm20948_getAccelData(&acceldata);
     icm20948_getTempData();
 
   }
