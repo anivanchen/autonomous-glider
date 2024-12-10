@@ -33,17 +33,18 @@ icm20948_return_code_t icm20948_init() {
 
   // Configure gyro
   data[0] = B2_GYRO_CONFIG_1;
-  data[1] = 0x29; // 250dps
+  data[1] = 0x1D; // 1000dps, 73.3 NBW (hz), active low pass filter
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Set gyro rate
   data[0] = B2_GYRO_SMPLRT_DIV;
-  data[1] = 0x00;
+  data[1] = 0x00; // 1.1kHz / (1 + 0) = 1.1kHz
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Configure accel
   data[0] = B2_ACCEL_CONFIG;
-  data[1] = 0x29;
+  data[1] = 0x1D; // 8g, 68.8 NBW (hz), active low pass filter
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Set accel rate
   data[0] = B2_ACCEL_SMPLRT_DIV_1;
@@ -51,7 +52,7 @@ icm20948_return_code_t icm20948_init() {
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   data[0] = B2_ACCEL_SMPLRT_DIV_2;
-  data[1] = 0x00;
+  data[1] = 0x00; // 1.1kHz / (1 + 0) = 1.1kHz
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Configure temp
@@ -123,9 +124,9 @@ icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data) {
     data->raw_y = (int16_t)(accelData[2] << 8 | accelData[3]);
     data->raw_z = (int16_t)(accelData[4] << 8 | accelData[5]);
 
-    data->x = (int16_t)(data->raw_x * 250 / 32768.0);
-    data->y = (int16_t)(data->raw_y * 250 / 32768.0);
-    data->z = (int16_t)(data->raw_z * 250 / 32768.0);
+    data->x = (int16_t)(data->raw_x * 8 / 4096.0);
+    data->y = (int16_t)(data->raw_y * 8 / 4096.0);
+    data->z = (int16_t)(data->raw_z * 8 / 4096.0);
 
     printf("X: %d, Y: %d, Z: %d\n", data->x, data->y, data->z);
   }
