@@ -225,6 +225,8 @@ icm20948_return_code_t icm20948_getGyroData(icm20948_gyro_t *data);
 icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data);
 icm20948_return_code_t icm20948_getMagData(icm20948_mag_t *data);
 
+icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_accel_t *accel_data);
+
 icm20948_return_code_t icm20948_getTempData();
 
 #endif

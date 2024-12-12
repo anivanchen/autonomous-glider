@@ -19,12 +19,11 @@ int main() {
 
   while (1) {
 
-    icm20948_gyro_t gyroData;
-    // icm20948_accel_t acceldata;
+    icm20948_gyro_t gyro_data;
+    icm20948_accel_t accel_data;
 
-    icm20948_getGyroData(&gyroData);
-    // icm20948_getAccelData(&acceldata);
-    icm20948_getTempData();
+    icm20948_getData(&gyro_data, &accel_data);
+    // icm20948_getTempData();
 
   }
 

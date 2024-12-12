@@ -89,9 +89,9 @@ icm20948_return_code_t icm20948_getGyroData(icm20948_gyro_t *data) {
     data->raw_y = (int16_t)(gyroData[2] << 8 | gyroData[3]);
     data->raw_z = (int16_t)(gyroData[4] << 8 | gyroData[5]);
 
-    data->x = (int16_t)(data->raw_x * 250 / 32768.0);
-    data->y = (int16_t)(data->raw_y * 250 / 32768.0);
-    data->z = (int16_t)(data->raw_z * 250 / 32768.0);
+    data->x = (int16_t)(data->raw_x * 1000 / 32768.0);
+    data->y = (int16_t)(data->raw_y * 1000 / 32768.0);
+    data->z = (int16_t)(data->raw_z * 1000 / 32768.0);
 
     printf("X: %d, Y: %d, Z: %d\n", data->x, data->y, data->z);
 
@@ -138,7 +138,57 @@ icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data) {
   return ICM20948_RET_OK;
 }
 
+icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_accel_t *accel_data) {
+
+  uint8_t reg = B0_INT_STATUS_1;
+  uint8_t ready[1];
+
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
+  i2c_read_blocking(I2C_PORT, I2C_ADDR, ready, 1, false);
+
+  if (ready[0] == 1) {
+
+    // printf("Data Ready\n");
+
+    reg = B0_ACCEL_XOUT_H;
+    uint8_t raw_data[12];
+    i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
+    i2c_read_blocking(I2C_PORT, I2C_ADDR, raw_data, 12, false);
+
+    gyro_data->raw_x = (int16_t)(raw_data[0] << 8 | raw_data[1]);
+    gyro_data->raw_y = (int16_t)(raw_data[2] << 8 | raw_data[3]);
+    gyro_data->raw_z = (int16_t)(raw_data[4] << 8 | raw_data[5]);
+
+    gyro_data->x = (int16_t)(gyro_data->raw_x * 1000 / 32768.0);
+    gyro_data->y = (int16_t)(gyro_data->raw_y * 1000 / 32768.0);
+    gyro_data->z = (int16_t)(gyro_data->raw_z * 1000 / 32768.0);
+
+    printf("X: %d, Y: %d, Z: %d\n", gyro_data->x, gyro_data->y, gyro_data->z);
+
+    accel_data->raw_x = (int16_t)(raw_data[6] << 8 | raw_data[7]);
+    accel_data->raw_y = (int16_t)(raw_data[8] << 8 | raw_data[9]);
+    accel_data->raw_z = (int16_t)(raw_data[10] << 8 | raw_data[11]);
+
+    accel_data->x = (int16_t)(accel_data->raw_x * 8 / 4096.0);
+    accel_data->y = (int16_t)(accel_data->raw_y * 8 / 4096.0);
+    accel_data->z = (int16_t)(accel_data->raw_z * 8 / 4096.0);
+
+    printf("X: %d, Y: %d, Z: %d\n", accel_data->x, accel_data->y, accel_data->z);
+    // printf("%d,%d,%d\n", accel_data->x, accel_data->y, accel_data->z);
+
+  }
+
+  // if (ready[0] == 0) {
+  //   printf("Data not ready\n");
+  // }
+
+  return ICM20948_RET_OK;
+
+}
+
 icm20948_return_code_t icm20948_getMagData(icm20948_mag_t *data) {
+
+  return ICM20948_RET_OK;
 
 }
 
