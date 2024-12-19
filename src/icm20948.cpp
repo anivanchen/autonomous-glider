@@ -16,12 +16,10 @@ icm20948_return_code_t icm20948_init() {
   printf("Chip ID MATCHES 0xEA: 0x%02X\n", chipID[0]);
 
   // Set clock source
-
   uint8_t data[2] = {B0_PWR_MGMT_1, 0x01};
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Ensure accelerometer and gyroscope are enabled
-
   data[0] = B0_PWR_MGMT_2;
   data[1] = 0x00;
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
@@ -56,9 +54,32 @@ icm20948_return_code_t icm20948_init() {
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Configure temp
-
   data[0] = B2_TEMP_CONFIG;
   data[1] = 0x02;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
+  // Change to user bank 0
+  data[0] = ICM20948_REG_BANK_SEL;
+  data[1] = ICM20948_USER_BANK_0;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
+  // Enable Master I2C
+  data[0] = B0_USER_CTRL;
+  data[1] = 0x20;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
+  data[0] = B0_LP_CONFIG;
+  data[1] = 0x40;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
+  // Change to user bank 3
+  data[0] = ICM20948_REG_BANK_SEL;
+  data[1] = ICM20948_USER_BANK_3;
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
+
+  // Configure I2C Master to read magnetometer data 
+  data[0] = B3_I2C_MST_ODR_CONFIG;
+  data[1] = 0x03;
   i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 2, true);
 
   // Change to user bank 0
@@ -136,6 +157,18 @@ icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data) {
   }
 
   return ICM20948_RET_OK;
+}
+
+int ak09916_write_reg(uint8_t reg, uint8_t data) {
+  i2c_write_blocking(I2C_PORT, AK09916_ADDR, &reg, 1, true);
+  i2c_write_blocking(I2C_PORT, AK09916_ADDR, &data, 1, true);
+  i2c_write_blocking(I2C_PORT, AK09916_ADDR, &data, 1, false);
+}
+
+int ak09916_read_reg(uint8_t reg, uint8_t *data) {
+  i2c_write_blocking(I2C_PORT, AK09916_ADDR, &reg, 1, true);
+  i2c_write_blocking(I2C_PORT, AK09916_ADDR, &reg, 1, true);
+  i2c_read_blocking(I2C_PORT, AK09916_ADDR, data, 1, false);
 }
 
 icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_accel_t *accel_data) {
