@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 pico_sdk_init()
 
-add_executable(autonomous-glider src/main.cpp src/icm20948.cpp)
+add_executable(autonomous-glider src/main.cpp src/icm20948.cpp src/pid.cpp)
 
 target_link_libraries(autonomous-glider PRIVATE pico_stdlib hardware_i2c)
 
