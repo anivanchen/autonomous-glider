@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __PICO_ICM20948__
 #define __PICO_ICM20948__
 
