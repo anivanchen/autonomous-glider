@@ -14,6 +14,7 @@ int main() {
   gpio_pull_up(I2C_SCL_PIN);
 
   icm20948_init();
+  enable_dmp();
 
   // Primary loop
 
@@ -23,6 +24,7 @@ int main() {
     icm20948_accel_t accel_data;
 
     icm20948_getData(&gyro_data, &accel_data);
+    read_dmp();
     // icm20948_getTempData();
 
   }

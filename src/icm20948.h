@@ -233,4 +233,8 @@ icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_acc
 
 icm20948_return_code_t icm20948_getTempData();
 
+icm20948_return_code_t enable_dmp();
+icm20948_return_code_t disable_dmp();
+icm20948_return_code_t read_dmp();
+
 #endif

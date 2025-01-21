@@ -239,3 +239,28 @@ icm20948_return_code_t icm20948_getTempData() {
 
   return ICM20948_RET_OK;
 }
+
+icm20948_return_code_t enable_dmp() {
+  uint8_t reg = B0_USER_CTRL;
+  uint8_t data[1] = {0xC0};
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 1, false);
+  return ICM20948_RET_OK;
+}
+
+icm20948_return_code_t disable_dmp() {
+  uint8_t reg = B0_USER_CTRL;
+  uint8_t data[1] = {0x00};
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, data, 1, false);
+  return ICM20948_RET_OK;
+}
+
+icm20948_return_code_t read_dmp() {
+  uint8_t reg = B0_EXT_SLV_SENS_DATA_00;
+  uint8_t data[1];
+  i2c_write_blocking(I2C_PORT, I2C_ADDR, &reg, 1, true);
+  i2c_read_blocking(I2C_PORT, I2C_ADDR, data, 1, false);
+  printf("DMP Data: %d\n", data[0]);
+  return ICM20948_RET_OK;
+}
