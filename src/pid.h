@@ -2,6 +2,8 @@
 #ifndef __PID_H__
 #define __PID_H__
 
+#include "pico/time.h"
+
 class PID {
   public:
     PID(float kp, float ki, float kd);

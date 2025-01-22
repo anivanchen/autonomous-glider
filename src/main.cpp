@@ -18,7 +18,7 @@ int main() {
 
   // Initialize PID Controller
 
-  PID pid(1, 0, 0, 0.02)
+  PID pid(1, 0, 0);
 
   // Primary loop
 
