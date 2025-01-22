@@ -9,7 +9,7 @@ PID::PID(float kp, float ki, float kd) {
   this->integral = 0;
   this->prevError = 0;
   this->output = 0;
-  this->lastTime = std::chrono::duration<float>(std::chrono::steady_clock::now()).count();
+  this->lastTime = time_us_64() / 1000;
 }
 
 // Update PID controller
@@ -32,8 +32,9 @@ void PID::setGains(float kp, float ki, float kd) {
 
 // Set PID time step
 void PID::updateDT() {
-  this->dt = (std::chrono::duration<float>(std::chrono::steady_clock::now() - lastTime)).count();
-  lastTime = std::chrono::duration<float>(std::chrono::steady_clock::now()).count();
+  uint64_t currentTime = time_us_64() / 1000;
+  this->dt = currentTime - lastTime;
+  lastTime = currentTime;
 }
 
 // Reset PID controller
