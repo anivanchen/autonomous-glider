@@ -1,13 +1,14 @@
 #include "main.h"
 #include "icm20948.h"
 #include "pwmservo.h"
+#include "pid.h"
 
 int main() {
 
   // Initialize chosen serial port
-  stdio_init_all();
+  // stdio_init_all();
 
-  // Initialize I2C port at 100 kHz
+  // // Initialize I2C port at 100 kHz
   // i2c_init(I2C_PORT, 400 * 1000);
   // gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
   // gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
@@ -20,6 +21,10 @@ int main() {
   Servo leftAileronServo = Servo(29);
   // Servo rightAileronServo = Servo(3);
   // Servo elevatorServo = Servo(4);
+
+  // Initialize PID Controller
+
+  PID pid(1, 0, 0);
 
   // Primary loop
 
