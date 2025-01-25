@@ -6,7 +6,9 @@
 #include <iostream>
 
 #include "hardware/i2c.h"
-#include "icm20948.h"
 #include "pico/stdlib.h"
+#include "icm20948.h"
+#include "pid.h"
+#include "pwmservo.h"
 
 #endif

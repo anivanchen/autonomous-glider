@@ -1,60 +1,86 @@
 #include "main.h"
-#include "icm20948.h"
-#include "pwmservo.h"
-#include "pid.h"
+
+enum glider_state {
+  STEADY_FLIGHT,
+  BANKING_180,
+  CONTROLLED_DESCENT,
+  LANDING
+};
 
 int main() {
+  
+  /*** Serial Port Initialization ***/
+  stdio_init_all();
 
-  // Initialize chosen serial port
-  // stdio_init_all();
+  /*** State Machine Initialization ***/
 
-  // // Initialize I2C port at 100 kHz
-  // i2c_init(I2C_PORT, 400 * 1000);
-  // gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
-  // gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
-  // gpio_pull_up(I2C_SDA_PIN);
-  // gpio_pull_up(I2C_SCL_PIN);
+  glider_state current_state = STEADY_FLIGHT;
 
-  // icm20948_init();
-  // enable_dmp();
+  // GPS initialization
+
+  
+
+  /*** IMU Initialization ***/
+
+  // Initialize I2C port at 400 kHz
+  i2c_init(I2C_PORT, 400 * 1000);
+  gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
+  gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
+  gpio_pull_up(I2C_SDA_PIN);
+  gpio_pull_up(I2C_SCL_PIN);
+
+  icm20948_init();
+
+  /*** Barometer Initialization ***/
+
+
+
+  /*** Servo Initialization ***/
 
   Servo leftAileronServo = Servo(29);
-  // Servo rightAileronServo = Servo(3);
-  // Servo elevatorServo = Servo(4);
+  Servo rightAileronServo = Servo(28);
+  Servo elevatorServo = Servo(27);
 
-  // Initialize PID Controller
+  /*** PID Initialization ***/
 
-  PID pid(1, 0, 0);
+  PID pitchPID = PID(0.1, 0.1, 0.1);
+  PID rollPID = PID(0.1, 0.1, 0.1);
 
   // Primary loop
 
   while (1) {
 
-    // icm20948_gyro_t gyro_data;
-    // icm20948_accel_t accel_data;
+    switch (current_state) {
+      case STEADY_FLIGHT:
+        // get pitch to be around 0 +- 5 degrees
+        // get roll to be around 0 +- 5 degrees
 
-    // icm20948_getData(&gyro_data, &accel_data);
-    // read_dmp();
+        // if steady flight for 5 seconds, switch to banking 180
+        // current_state = BANKING_180;
 
-    // leftAileronServo.setPosition(900); // MIN
-    // sleep_ms(1000);
-    // leftAileronServo.setPosition(2100); // MAX
-    // sleep_ms(1000);
-    // leftAileronServo.setPosition(1500); // CENTER
-    // sleep_ms(1000);
+        break;
+      case BANKING_180:
+        // allow pitch to descend, 5 degreesish
+        // start rolling right until 180 degrees
+        // maximum roll rate is 3 degrees per second
 
-    for (int i = 900; i < 2100; i += 50) {
-      leftAileronServo.setPosition(i);
-      sleep_ms(50);
-      if (i == 2100) {
-        i = 900;
-      }
+        // if 180 degrees, switch to controlled descent
+        // current_state = CONTROLLED_DESCENT;
+
+        break;
+      case CONTROLLED_DESCENT:
+        // pitch down 10 degrees to start descent
+        // roll left/right to be on course with the goal
+
+        // at a certain altitude, switch to landing
+        // current_state = LANDING;
+
+        break;
+
+      case LANDING:
+        // attempt to slow down by pitching up 30 degrees
+        break;
     }
-
-    // rightAileronServo.setPosition(50);
-    // elevatorServo.setPosition(50);
-    
-    // icm20948_getTempData();
 
   }
 
