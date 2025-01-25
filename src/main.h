@@ -10,5 +10,6 @@
 #include "icm20948.h"
 #include "pid.h"
 #include "pwmservo.h"
+#include "bmp280.h"
 
 #endif
