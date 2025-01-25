@@ -57,15 +57,13 @@ int main() {
 
   // GPS initialization
 
-
-
   /*** IMU Initialization ***/
   
   icm20948_init();
 
   /*** Barometer Initialization ***/
 
-  bmp280_init();
+  // bmp280_init();
 
   /*** Servo Initialization ***/
 
@@ -90,34 +88,89 @@ int main() {
 
     switch (current_state) {
       case STEADY_FLIGHT:
+      {
         // get pitch to be around 0 +- 5 degrees
         // get roll to be around 0 +- 5 degrees
+
+        if (!withinTolerance(current_pose.pitch, 0, 5)) {
+          pitchPID.update(0, current_pose.pitch);
+        } 
+
+        if (!withinTolerance(current_pose.roll, 0, 5)) {
+          rollPID.update(0, current_pose.roll);
+        }
 
         // if steady flight for 5 seconds, switch to banking 180
         // current_state = BANKING_180;
 
         break;
+      }
+
       case BANKING_180:
+      {
         // allow pitch to descend, 5 degreesish
-        // start rolling right until 180 degrees
+        // start rolling right until yaw is 180 degrees
         // maximum roll rate is 3 degrees per second
+
+        if (!withinTolerance(current_pose.pitch, 5, 5)) {
+          pitchPID.update(5, current_pose.pitch);
+        } else {
+          pitchPID.update(0, current_pose.pitch);
+        }
+
+        if (!withinTolerance(current_pose.yaw, 180, 5)) {
+          rollPID.update(5, current_pose.roll);
+        } else {
+          rollPID.update(0, current_pose.roll);
+        }
 
         // if 180 degrees, switch to controlled descent
         // current_state = CONTROLLED_DESCENT;
+        if (withinTolerance(current_pose.y, 0, 20)) {
+          current_state = CONTROLLED_DESCENT;
+        }
 
         break;
+      }
+
       case CONTROLLED_DESCENT:
+      {
         // pitch down 10 degrees to start descent
         // roll left/right to be on course with the goal
 
-        // at a certain altitude, switch to landing
+        if (withinTolerance(current_pose.y, 0, 20)) {
+          pitchPID.update(10, current_pose.pitch);
+        } else {
+          pitchPID.update(0, current_pose.pitch);
+        }
+
+        if (!withinTolerance(current_pose.roll, 0, 5)) {
+          rollPID.update(0, current_pose.roll);
+        }
+
+        // once below 15 meters altitude, switch to landing
         // current_state = LANDING;
 
+        if (current_pose.z < 15) {
+          current_state = LANDING;
+        }
+
         break;
+      }
 
       case LANDING:
+      {
         // attempt to slow down by pitching up 30 degrees
+
+        if (!withinTolerance(current_pose.pitch, 30, 5)) {
+          pitchPID.update(30, current_pose.pitch);
+        } else {
+          pitchPID.update(0, current_pose.pitch);
+        }
+
         break;
+      }
+    }
     // Update LEDS
 
     float new_time = time_us_64() / 1000000;
