@@ -32,7 +32,7 @@ void PID::setGains(float kp, float ki, float kd) {
 
 // Set PID time step
 void PID::updateDT() {
-  uint64_t currentTime = time_us_64() / 1000;
+  uint64_t currentTime = time_us_64() / 1000000;
   this->dt = currentTime - lastTime;
   lastTime = currentTime;
 }
