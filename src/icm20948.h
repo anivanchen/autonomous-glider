@@ -9,10 +9,10 @@
 #include "hardware/i2c.h"
 
 // Define I2C pins
-#define I2C_PORT i2c0
-#define I2C_ADDR 0x69
-#define I2C_SDA_PIN 0
-#define I2C_SCL_PIN 1
+#define IMU_I2C_PORT i2c0
+#define IMU_I2C_ADDR 0x69
+#define IMU_I2C_SDA_PIN 0
+#define IMU_I2C_SCL_PIN 1
 
 // Define AK09916 I2C address
 #define AK09916_ADDR 0x0C

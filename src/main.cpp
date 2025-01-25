@@ -18,22 +18,15 @@ int main() {
 
   // GPS initialization
 
-  
+
 
   /*** IMU Initialization ***/
-
-  // Initialize I2C port at 400 kHz
-  i2c_init(I2C_PORT, 400 * 1000);
-  gpio_set_function(I2C_SDA_PIN, GPIO_FUNC_I2C);
-  gpio_set_function(I2C_SCL_PIN, GPIO_FUNC_I2C);
-  gpio_pull_up(I2C_SDA_PIN);
-  gpio_pull_up(I2C_SCL_PIN);
-
+  
   icm20948_init();
 
   /*** Barometer Initialization ***/
 
-
+  bmp280_init();
 
   /*** Servo Initialization ***/
 
