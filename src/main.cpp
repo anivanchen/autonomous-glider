@@ -171,6 +171,13 @@ int main() {
         break;
       }
     }
+
+    // Update servos
+
+    leftAileronServo.setPosition(rollPID.getOutput());
+    rightAileronServo.setPosition(rollPID.getOutput());
+    elevatorServo.setPosition(pitchPID.getOutput());
+
     // Update LEDS
 
     float new_time = time_us_64() / 1000000;
