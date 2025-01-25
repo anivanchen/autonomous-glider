@@ -1,11 +1,25 @@
 #include "main.h"
 
+/*
+ * UNIT CONVENTIONS
+ * DISTANCE = METERS
+ * ANGLE = DEGREES
+ * TIME = SECONDS
+ */
+
 enum glider_state {
   STEADY_FLIGHT,
   BANKING_180,
   CONTROLLED_DESCENT,
   LANDING
 };
+void blink_lights() {
+  if (gpio_get(LED_PIN)) {
+    gpio_put(LED_PIN, 0);
+  } else {
+    gpio_put(LED_PIN, 1);
+  }
+}
 
 int main() {
   
@@ -38,6 +52,10 @@ int main() {
 
   PID pitchPID = PID(0.1, 0.1, 0.1);
   PID rollPID = PID(0.1, 0.1, 0.1);
+
+  // Time tracker for LEDS
+
+  float current_time = time_us_64() / 1000000;
 
   // Primary loop
 
@@ -73,6 +91,13 @@ int main() {
       case LANDING:
         // attempt to slow down by pitching up 30 degrees
         break;
+    // Update LEDS
+
+    float new_time = time_us_64() / 1000000;
+
+    if (new_time - current_time > 1) {
+      blink_lights();
+      current_time = new_time;
     }
 
   }

@@ -12,4 +12,6 @@
 #include "pwmservo.h"
 #include "bmp280.h"
 
+#define LED_PIN 25 // TODO: FILL IN WITH CORRECT PIN
+
 #endif
