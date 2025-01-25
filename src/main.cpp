@@ -13,6 +13,31 @@ enum glider_state {
   CONTROLLED_DESCENT,
   LANDING
 };
+
+struct pose {
+  float x;
+  float y;
+  float z;
+  float pitch;
+  float roll;
+  float yaw;
+};
+
+struct pose getPose() {
+  struct pose current_pose;
+  current_pose.x = 0;
+  current_pose.y = 0;
+  current_pose.z = 0;
+  current_pose.pitch = 0;
+  current_pose.roll = 0;
+  current_pose.yaw = 0;
+  return current_pose;
+}
+
+bool withinTolerance(float value, float target, float tolerance) {
+  return value > target - tolerance && value < target + tolerance;
+}
+
 void blink_lights() {
   if (gpio_get(LED_PIN)) {
     gpio_put(LED_PIN, 0);
@@ -60,6 +85,8 @@ int main() {
   // Primary loop
 
   while (1) {
+
+    pose current_pose = getPose();
 
     switch (current_state) {
       case STEADY_FLIGHT:
