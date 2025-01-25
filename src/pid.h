@@ -7,7 +7,7 @@
 class PID {
   public:
     PID(float kp, float ki, float kd);
-    float update(float setpoint, float input);
+    float update(float setpoint, float measurement);
     void setGains(float kp, float ki, float kd);
     void updateDT();
     void reset();

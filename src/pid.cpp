@@ -13,9 +13,9 @@ PID::PID(float kp, float ki, float kd) {
 }
 
 // Update PID controller
-float PID::update(float setpoint, float input) {
+float PID::update(float setpoint, float measurement) {
   updateDT();
-  float error = setpoint - input;
+  float error = setpoint - measurement;
   integral += error * dt;
   float derivative = (error - prevError) / dt;
   output = kp * error + ki * integral + kd * derivative;
