@@ -15,8 +15,10 @@ class Servo {
   public:
     Servo(uint8_t servoPin);
     void setPosition(uint16_t position);
+    uint16_t getPosition();
   private:
     uint servoPin;
+    uint16_t currentPosition;
 };
 
 #endif

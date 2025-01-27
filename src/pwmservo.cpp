@@ -2,6 +2,7 @@
 
 Servo::Servo(uint8_t servoPin) {
   this->servoPin = servoPin;
+  this->currentPosition = 0;
 
   gpio_set_function(servoPin, GPIO_FUNC_PWM);
 
@@ -13,7 +14,14 @@ Servo::Servo(uint8_t servoPin) {
 
 }
 
+// Minimum: 900, Maximum: 2100, Midpoint: 1500
+
 void Servo::setPosition(uint16_t position) {
   uint16_t level = (position * (125000000 / (16.0f * 50.0f)) - 1) / (1000000 / (125000000 / 16.0f / ((125000000 / (16.0f * 50.0f)) - 1) + 1));
   pwm_set_gpio_level(servoPin, level);
+  currentPosition = position;
+}
+
+uint16_t Servo::getPosition() {
+  return this->currentPosition;
 }
