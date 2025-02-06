@@ -2,10 +2,16 @@
 /*Reza Ebrahimi - https://github.com/ebrezadev */
 /*Version 1.0*/
 
-#include "bmp280_defs.h"
+/*Adapted for RP2040 by Ivan Chen - https://github.com/anivanchen*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __BMP280_H__
 #define __BMP280_H__
+
+#include "bmp280_low_level.h"
 
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
@@ -91,4 +97,7 @@ void bmp280_write_array(uint8_t deviceAddress, uint8_t startRegisterAddress, uin
 void delay_function(uint32_t delayMS);
 float power_function(float x, float y);
 
+#endif
+#ifdef __cplusplus 
+}
 #endif

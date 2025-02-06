@@ -4,7 +4,7 @@
 
 /*Adapted for RP2040 by Ivan Chen - https://github.com/anivanchen*/
 
-#include "bmp280.h"
+#include "bmp280_low_level.h"
 
 // Define I2C pins
 #define BARO_I2C_PORT    i2c1
@@ -30,7 +30,7 @@ void bmp280_read_array(uint8_t deviceAddress, uint8_t startRegisterAddress, uint
 void bmp280_i2c_init() {
   sleep_ms(500);  // Short delay for boot up
 
-  i2c_init(I2C_PORT, 400 * 1000);  // TODO: determine what this refresh rate should be for the BMP280
+  i2c_init(BARO_I2C_PORT, 400 * 1000);  // TODO: determine what this refresh rate should be for the BMP280
   gpio_set_function(BARO_I2C_SDA_PIN, GPIO_FUNC_I2C);
   gpio_set_function(BARO_I2C_SCL_PIN, GPIO_FUNC_I2C);
   gpio_pull_up(BARO_I2C_SDA_PIN);
