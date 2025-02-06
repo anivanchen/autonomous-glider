@@ -1,8 +1,7 @@
 #include "icm20948.h"
 
 icm20948_return_code_t icm20948_init() {
-
-  sleep_ms(500); // Short delay for boot up
+  sleep_ms(500);  // Short delay for boot up
 
   // Initialize I2C port at 400 kHz
   i2c_init(IMU_I2C_PORT, 400 * 1000);
@@ -42,17 +41,17 @@ icm20948_return_code_t icm20948_init() {
 
   // Configure gyro
   data[0] = B2_GYRO_CONFIG_1;
-  data[1] = 0x1D; // 1000dps, 73.3 NBW (hz), active low pass filter
+  data[1] = 0x1D;  // 1000dps, 73.3 NBW (hz), active low pass filter
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
   // Set gyro rate
   data[0] = B2_GYRO_SMPLRT_DIV;
-  data[1] = 0x00; // 1.1kHz / (1 + 0) = 1.1kHz
+  data[1] = 0x00;  // 1.1kHz / (1 + 0) = 1.1kHz
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
   // Configure accel
   data[0] = B2_ACCEL_CONFIG;
-  data[1] = 0x1D; // 8g, 68.8 NBW (hz), active low pass filter
+  data[1] = 0x1D;  // 8g, 68.8 NBW (hz), active low pass filter
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
   // Set accel rate
@@ -61,7 +60,7 @@ icm20948_return_code_t icm20948_init() {
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
   data[0] = B2_ACCEL_SMPLRT_DIV_2;
-  data[1] = 0x00; // 1.1kHz / (1 + 0) = 1.1kHz
+  data[1] = 0x00;  // 1.1kHz / (1 + 0) = 1.1kHz
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
   // Configure temp
@@ -88,7 +87,7 @@ icm20948_return_code_t icm20948_init() {
   data[1] = ICM20948_USER_BANK_3;
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
 
-  // Configure I2C Master to read magnetometer data 
+  // Configure I2C Master to read magnetometer data
   data[0] = B3_I2C_MST_ODR_CONFIG;
   data[1] = 0x03;
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, data, 2, true);
@@ -102,7 +101,6 @@ icm20948_return_code_t icm20948_init() {
 }
 
 icm20948_return_code_t icm20948_getGyroData(icm20948_gyro_t *data) {
-
   uint8_t reg = B0_INT_STATUS_1;
   uint8_t ready[1];
 
@@ -126,18 +124,16 @@ icm20948_return_code_t icm20948_getGyroData(icm20948_gyro_t *data) {
     data->z = (int16_t)(data->raw_z * 1000 / 32768.0);
 
     printf("X: %d, Y: %d, Z: %d\n", data->x, data->y, data->z);
-
   }
 
   if (ready[0] == 0) {
     printf("Gyro data not ready\n");
   }
-  
+
   return ICM20948_RET_OK;
 }
 
 icm20948_return_code_t icm20948_getAccelData(icm20948_accel_t *data) {
-
   uint8_t reg = B0_INT_STATUS_1;
   uint8_t ready[1];
 
@@ -183,7 +179,6 @@ int ak09916_read_reg(uint8_t reg, uint8_t *data) {
 }
 
 icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_accel_t *accel_data) {
-
   uint8_t reg = B0_INT_STATUS_1;
   uint8_t ready[1];
 
@@ -191,7 +186,6 @@ icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_acc
   i2c_read_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, ready, 1, false);
 
   if (ready[0] == 1) {
-
     // printf("Data Ready\n");
 
     reg = B0_ACCEL_XOUT_H;
@@ -219,7 +213,6 @@ icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_acc
 
     printf("X: %d, Y: %d, Z: %d\n", accel_data->x, accel_data->y, accel_data->z);
     // printf("%d,%d,%d\n", accel_data->x, accel_data->y, accel_data->z);
-
   }
 
   // if (ready[0] == 0) {
@@ -227,17 +220,11 @@ icm20948_return_code_t icm20948_getData(icm20948_gyro_t *gyro_data, icm20948_acc
   // }
 
   return ICM20948_RET_OK;
-
 }
 
-icm20948_return_code_t icm20948_getMagData(icm20948_mag_t *data) {
-
-  return ICM20948_RET_OK;
-
-}
+icm20948_return_code_t icm20948_getMagData(icm20948_mag_t *data) { return ICM20948_RET_OK; }
 
 icm20948_return_code_t icm20948_getTempData() {
-
   uint8_t reg = B0_TEMP_OUT_H;
   uint8_t tempData[2];
   i2c_write_blocking(IMU_I2C_PORT, IMU_I2C_ADDR, &reg, 1, true);

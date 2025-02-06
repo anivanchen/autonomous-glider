@@ -5,13 +5,13 @@
 #include <cstring>
 #include <iostream>
 
+#include "bmp280.h"
 #include "hardware/i2c.h"
-#include "pico/stdlib.h"
 #include "icm20948.h"
+#include "pico/stdlib.h"
 #include "pid.h"
 #include "pwmservo.h"
-#include "bmp280.h"
 
-#define LED_PIN 25 // TODO: FILL IN WITH CORRECT PIN
+#define LED_PIN 25  // TODO: FILL IN WITH CORRECT PIN
 
 #endif

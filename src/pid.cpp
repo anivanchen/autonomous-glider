@@ -45,6 +45,4 @@ void PID::reset() {
 }
 
 // Get PID output
-float PID::getOutput() {
-  return output;
-}
+float PID::getOutput() { return output; }

@@ -7,12 +7,7 @@
  * TIME = SECONDS
  */
 
-enum glider_state {
-  STEADY_FLIGHT,
-  BANKING_180,
-  CONTROLLED_DESCENT,
-  LANDING
-};
+enum glider_state { STEADY_FLIGHT, BANKING_180, CONTROLLED_DESCENT, LANDING };
 
 struct pose {
   float x;
@@ -47,7 +42,6 @@ void blink_lights() {
 }
 
 int main() {
-  
   /*** Serial Port Initialization ***/
   stdio_init_all();
 
@@ -59,7 +53,7 @@ int main() {
   // GPS initialization
 
   /*** IMU Initialization ***/
-  
+
   icm20948_init();
 
   /*** Barometer Initialization ***/
@@ -90,16 +84,14 @@ int main() {
   // Primary loop
 
   while (1) {
-
     pose current_pose = getPose();
     float current_time = time_us_64() / 1000000;
 
-    isSameState = current_state == previous_state; 
+    isSameState = current_state == previous_state;
     previous_state = current_state;
 
     switch (current_state) {
-      case STEADY_FLIGHT:
-      {
+      case STEADY_FLIGHT: {
         if (!isSameState) {
           state_transition_time = current_time;
           steady_flight_transition = false;
@@ -110,7 +102,7 @@ int main() {
 
         if (!withinTolerance(current_pose.pitch, 0, 5)) {
           pitchPID.update(0, current_pose.pitch);
-        } 
+        }
 
         if (!withinTolerance(current_pose.roll, 0, 5)) {
           rollPID.update(0, current_pose.roll);
@@ -128,8 +120,7 @@ int main() {
         break;
       }
 
-      case BANKING_180:
-      {
+      case BANKING_180: {
         if (!isSameState) {
           state_transition_time = current_time;
         }
@@ -149,7 +140,7 @@ int main() {
           rollPID.update(0, current_pose.roll);
         }
 
-        // if has rotated 180 degrees +- 10 degrees and within 40 meters 
+        // if has rotated 180 degrees +- 10 degrees and within 40 meters
         // of target y, switch to controlled descent
         if (withinTolerance(current_pose.y, 0, 20) && withinTolerance(current_pose.yaw, 180, 10)) {
           current_state = CONTROLLED_DESCENT;
@@ -158,8 +149,7 @@ int main() {
         break;
       }
 
-      case CONTROLLED_DESCENT:
-      {
+      case CONTROLLED_DESCENT: {
         if (!isSameState) {
           state_transition_time = current_time;
         }
@@ -184,8 +174,7 @@ int main() {
         break;
       }
 
-      case LANDING:
-      {
+      case LANDING: {
         // attempt to slow down by pitching up 30 degrees
 
         if (!withinTolerance(current_pose.pitch, 30, 5)) {
@@ -210,7 +199,6 @@ int main() {
       blink_lights();
       led_blinker_time = current_time;
     }
-
   }
 
   return 0;
