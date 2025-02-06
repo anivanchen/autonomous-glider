@@ -58,7 +58,7 @@ int main() {
 
   /*** Barometer Initialization ***/
 
-  // bmp280_init();
+  bmp280_init();
 
   /*** Servo Initialization ***/
 
